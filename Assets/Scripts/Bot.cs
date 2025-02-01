@@ -6,14 +6,22 @@ using UnityEngine.AI;
 public class Bot : MonoBehaviour {
 
     public GameObject target;
+    public GameObject sphere;
+
+    GameObject jitter;
 
     NavMeshAgent agent;
     Drive ds;
+    Vector3 wanderTarget = Vector3.zero;
+
+    float q = 0.0f;
+
 
     void Start() {
 
         agent = GetComponent<NavMeshAgent>();
         ds = target.GetComponent<Drive>();
+        jitter = Instantiate(sphere);
     }
 
     void Seek(Vector3 location) {
@@ -53,11 +61,44 @@ public class Bot : MonoBehaviour {
         Flee(target.transform.position + target.transform.forward * lookAhead);
     }
 
+    void Wander() {
+
+        float wanderRadius = 10.0f;
+        float wanderDistance = 20.0f;
+        float wanderJitter = 1.0f;
+
+        wanderTarget += new Vector3(
+            Random.Range(-1.0f, 1.0f) * wanderJitter,
+            0.0f,
+            Random.Range(-1.0f, 1.0f));
+        wanderTarget.Normalize();
+        wanderTarget *= wanderRadius;
+
+        Vector3 targetLocal = wanderTarget + new Vector3(0.0f, 0.0f, wanderDistance);
+        Vector3 targetWorld = gameObject.transform.InverseTransformVector(targetLocal);
+
+        Debug.DrawLine(transform.position, targetWorld, Color.red);
+        jitter.transform.position = targetWorld;
+        Seek(targetWorld);
+    }
+
     void Update() {
 
         // Seek(target.transform.position);
         // Flee(target.transform.position);
         // Pursue();
-        Evade();
+        // Evade();
+        Wander();
+    }
+
+    void FixedUpdate() {
+        // always draw a 5-unit colored line from the origin
+        Color color = new Color(q, q, 1.0f);
+        Debug.DrawLine(Vector3.zero, new Vector3(0, 5, 0), color);
+        q = q + 0.01f;
+
+        if (q > 1.0f) {
+            q = 0.0f;
+        }
     }
 }
